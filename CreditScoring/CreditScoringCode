@@ -1,0 +1,38 @@
+import numpy as np
+import sklearn as sk
+from sklearn import tree
+from sklearn.model_selection import cross_val_score
+
+def preprocessing(samples,labels,clf):
+
+    samples_std = sk.preprocessing.scale(samples)
+    samples_norm = sk.preprocessing.normalize(samples)
+
+    scores1 = cross_val_score(clf, samples, labels, cv=20, scoring='accuracy')
+    scores2 = cross_val_score(clf, samples, labels, cv=20, scoring='precision')
+
+    scores1_std = cross_val_score(clf, samples_std, labels, cv=20, scoring='accuracy')
+    scores2_std = cross_val_score(clf, samples_std, labels, cv=20, scoring='precision')
+
+    scores1_norm = cross_val_score(clf, samples_norm, labels, cv=20, scoring='accuracy')
+    scores2_norm = cross_val_score(clf, samples_norm, labels, cv=20, scoring='precision')
+
+    print('CV Accuracy normal: ' + "{:.9f}".format(scores1.mean()))
+    print('CV Precision normal: ' + "{:.9f}".format(scores2.mean()))
+    print('CV Accuracy standardized: ' + "{:.9f}".format(scores1_std.mean()))
+    print('CV Precision standardized: ' + "{:.9f}".format(scores2_std.mean()))
+    print('CV Accuracy normalized: ' + "{:.9f}".format(scores1_norm.mean()))
+    print('CV Precision normalized: ' + "{:.9f}".format(scores2_norm.mean()))
+
+
+dataset = np.genfromtxt('german_credit.csv', delimiter=',', skip_header = 1)
+labels = dataset[:, 0]
+samples = np.delete(dataset, 0, 1)
+
+#X_train, X_test, y_train, y_test = sk.model_selection.train_test_split(samples, labels, test_size=0.3333, random_state=1)
+#X_train_std, X_test_std, y_train_std, y_test_std = sk.model_selection.train_test_split(samples_std, labels, test_size=0.3333, random_state=1)
+
+dec_tree = tree.DecisionTreeClassifier(min_samples_split=12, min_samples_leaf=5)
+preprocessing(samples,labels,dec_tree)
+
+
