@@ -2,22 +2,44 @@ import numpy as np
 import sklearn as sk
 from sklearn import tree
 from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV
+from sklearn.neural_network import MLPClassifier
+
+
+def get_optimal_params_for_clf(mlp,params,samples,labels):
+    # scale samples
+    samples_scaled = sk.preprocessing.scale(samples)
+    # split up data for test and training
+    X_train, X_test, y_train, y_test = sk.model_selection.train_test_split(samples_scaled, labels, test_size=0.3333, random_state=1)
+
+    clf = GridSearchCV(mlp, params, n_jobs=-1, cv=5)
+    clf.fit(X_train, y_train)
+    # Best parameter set
+    print('Best parameters found:\n', clf.best_params_)
+
+    # All results
+    means = clf.cv_results_['mean_test_score']
+    stds = clf.cv_results_['std_test_score']
+    for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+        print("%0.3f (+/-%0.03f) for %r" % (mean, std * 2, params))
+
 
 def preprocessing(samples,labels,clf):
-
     samples_std = sk.preprocessing.scale(samples)
     samples_norm = sk.preprocessing.normalize(samples)
 
-    X_train, X_test, y_train, y_test = sk.model_selection.train_test_split(samples, labels, test_size=0.3333, random_state=1)
-    X_train_std, X_test_std, y_train_std, y_test_std = sk.model_selection.train_test_split(samples_std, labels, test_size=0.3333, random_state=1)
-    X_train_norm, X_test_norm, y_train_norm, y_test_norm = sk.model_selection.train_test_split(samples_norm, labels, test_size=0.3333, random_state=1)
+    x_train, x_test, y_train, y_test = sk.model_selection.train_test_split(samples, labels, test_size=0.3333, random_state=1)
+    x_train_std, x_test_std, y_train_std, y_test_std = sk.model_selection.train_test_split(samples_std, labels, test_size=0.3333, random_state=1)
+    x_train_norm, x_test_norm, y_train_norm, y_test_norm = sk.model_selection.train_test_split(samples_norm, labels, test_size=0.3333, random_state=1)
 
-    clf.fit(X_train,y_train)
-    pred = clf.predict(X_test)
-    clf.fit(X_train_std,y_train_std)
-    pred_std = clf.predict(X_test_std)
-    clf.fit(X_train_norm,y_train_norm)
-    pred_norm = clf.predict(X_test_norm)
+    clf.fit(x_train,y_train)
+    pred = clf.predict(x_test)
+    clf.fit(x_train_std,y_train_std)
+    pred_std = clf.predict(x_test_std)
+    clf.fit(x_train_norm,y_train_norm)
+    pred_norm = clf.predict(x_test_norm)
+
+
     scores1 = cross_val_score(clf, samples, labels, cv=20, scoring='accuracy')
     scores2 = cross_val_score(clf, samples, labels, cv=20, scoring='precision')
 
@@ -39,13 +61,20 @@ def preprocessing(samples,labels,clf):
 
 
 
-
 dataset = np.genfromtxt('german_credit.csv', delimiter=',', skip_header = 1)
 labels = dataset[:, 0]
 samples = np.delete(dataset, 0, 1)
 
 
 dec_tree = tree.DecisionTreeClassifier(min_samples_split=12, min_samples_leaf=5)
-preprocessing(samples,labels,dec_tree)
+#preprocessing(samples,labels,dec_tree)
+mlp = MLPClassifier(max_iter=1000)
+parameter_space = {
+    'hidden_layer_sizes': [(9,), (9,9), (21,),(21,21), (30,), (30,30)],
+    'activation': ['tanh', 'relu', 'logistic'],
+    'solver': ['sgd', 'adam', 'lbfgs'],
+}
+get_optimal_params_for_clf(mlp,parameter_space,samples,labels)
+
 
 
