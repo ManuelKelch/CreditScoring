@@ -6,16 +6,23 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPClassifier
 
 
-def get_optimal_params_for_clf(mlp,params,samples,labels):
+def get_optimal_params_for_clf(samples,labels):
     # scale samples
+    mlp = MLPClassifier(max_iter=10000)
     samples_scaled = sk.preprocessing.scale(samples)
+    print(samples_scaled)
+    params = {
+        'hidden_layer_sizes': [(9,), (21,), (30,)],
+        'activation': ['tanh', 'relu', 'logistic'],
+        'solver': ['sgd', 'adam'],
+    }
     # split up data for test and training
     X_train, X_test, y_train, y_test = sk.model_selection.train_test_split(samples_scaled, labels, test_size=0.3333, random_state=1)
 
     clf = GridSearchCV(mlp, params, n_jobs=-1, cv=5)
     clf.fit(X_train, y_train)
     # Best parameter set
-    print('Best parameters found:\n', clf.best_params_)
+    print('Best parameters found:\n', clf.best_params_,"%0.3f"% clf.best_score_)
 
     # All results
     means = clf.cv_results_['mean_test_score']
@@ -58,23 +65,27 @@ def preprocessing(samples,labels,clf):
     print('CV Accuracy normalized: ' + "{:.9f}".format(scores1_norm.mean()))
     print('CV Precision normalized: ' + "{:.9f}".format(scores2_norm.mean()))
     print('accuracy score normal: ' + "{:.9f}".format(sk.metrics.accuracy_score(y_test_norm, pred_norm)))
-
-
+def testNeuralNetwork():
+    mlp = MLPClassifier(max_iter=10000, hidden_layer_sizes=(30,), activation="relu", solver='sgd')
+    mlp1 = MLPClassifier(max_iter=10000, shuffle=True, hidden_layer_sizes=(9,), activation='tanh', solver='sgd')
+    X_train, X_test, y_train, y_test = sk.model_selection.train_test_split(samples_scaled, labels, test_size=0.3333,
+                                                                           random_state=1)
+    mlp.fit(X_train, y_train)
+    mlp1.fit(X_train,y_train)
+    predictions = mlp.predict(X_test)
+    predictions1 = mlp1.predict(X_test)
+    score = sk.metrics.accuracy_score(y_test, predictions)
+    score1 = sk.metrics.accuracy_score(y_test, predictions1)
+    print(score)
+    print(score1)
 
 dataset = np.genfromtxt('german_credit.csv', delimiter=',', skip_header = 1)
 labels = dataset[:, 0]
 samples = np.delete(dataset, 0, 1)
+samples_scaled = sk.preprocessing.scale(samples)
 
-
-dec_tree = tree.DecisionTreeClassifier(min_samples_split=12, min_samples_leaf=5)
 #preprocessing(samples,labels,dec_tree)
-mlp = MLPClassifier(max_iter=1000)
-parameter_space = {
-    'hidden_layer_sizes': [(9,), (9,9), (21,),(21,21), (30,), (30,30)],
-    'activation': ['tanh', 'relu', 'logistic'],
-    'solver': ['sgd', 'adam', 'lbfgs'],
-}
-get_optimal_params_for_clf(mlp,parameter_space,samples,labels)
-
+#get_optimal_params_for_clf(samples,labels)
+#testNeuralNetwork()
 
 
